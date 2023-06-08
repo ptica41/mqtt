@@ -1,0 +1,39 @@
+DROP TABLE IF EXISTS sensor;
+
+DROP TABLE IF EXISTS point;
+
+CREATE TABLE point (
+    id int(11) NOT NULL AUTO_INCREMENT,
+    name VARCHAR(50) COLLATE utf8mb4_unicode_ci, 
+    latitude VARCHAR(10) COLLATE utf8mb4_unicode_ci,
+    longitude VARCHAR(10) COLLATE utf8mb4_unicode_ci,
+    PRIMARY KEY (id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+DROP TABLE IF EXISTS sensor;
+
+CREATE TABLE sensor (
+    id int(11) NOT NULL AUTO_INCREMENT,
+    name VARCHAR(100) COLLATE utf8mb4_unicode_ci NOT NULL UNIQUE,
+    unit VARCHAR(50) COLLATE utf8mb4_unicode_ci,
+    PRIMARY KEY (id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+DROP TABLE IF EXISTS indication;
+
+CREATE TABLE indication (
+    id int(11) NOT NULL AUTO_INCREMENT,
+    start DATETIME NOT NULL,
+    end DATETIME NOT NULL,
+    point_id int(11) NOT NULL,
+    sensor_id int(11) NOT NULL,
+    value FLOAT NOT NULL,
+    status VARCHAR(15) COLLATE utf8mb4_unicode_ci,
+    PRIMARY KEY (id),
+    FOREIGN KEY (point_id)
+        REFERENCES point (id)
+        ON DELETE CASCADE,
+    FOREIGN KEY (sensor_id)
+        REFERENCES sensor (id)
+        ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
