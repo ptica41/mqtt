@@ -6,7 +6,7 @@ import datetime
 from copy import deepcopy
 
 import pymysql
-from paho.mqtt import client as mqtt_client
+from paho.mqtt import client_id as mqtt_client
 
 broker = '192.168.65.65'
 port = 1883

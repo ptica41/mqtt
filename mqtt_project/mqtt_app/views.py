@@ -1,16 +1,18 @@
 from django.http import JsonResponse
 from django.views import View
+
 from .models import Sensor, Indication, Point
+from .config import STATUS
 import json
 
-STATUS = {"Уровень CO2": [6, 10],
-          "Уровень NO2": [6, 10],
-          "Уровень SO2": [4, 10],
-          "Уровень CO": [4, 8],
-          "Концентрация крупных частиц пыли (PM 10)": [2, 3],
-          "Концентрация мелкодисперсных частиц пыли(PM 2, 5)": [2, 3],
-          "Концентрация ультрадисперсных частиц пыли (PM 1,0)": [2, 3]
-          }  # диапазоны состояний статуса
+# STATUS = {"Уровень CO2": [6, 10],
+#           "Уровень NO2": [6, 10],
+#           "Уровень SO2": [4, 10],
+#           "Уровень CO": [4, 8],
+#           "Концентрация крупных частиц пыли (PM 10)": [2, 3],
+#           "Концентрация мелкодисперсных частиц пыли(PM 2, 5)": [2, 3],
+#           "Концентрация ультрадисперсных частиц пыли (PM 1,0)": [2, 3]
+#           }  # диапазоны состояний статуса
 
 
 # class Marks(View):
@@ -63,6 +65,9 @@ class Marks(View):
             count = 0
             latitude = list(Point.objects.filter(id=i["point_id"]).values("latitude"))[0]["latitude"]
             longitude = list(Point.objects.filter(id=i["point_id"]).values("longitude"))[0]["longitude"]
+            if not i["status"]:  # определение и добавление в БД правильного статуса
+                s = Indication.objects.get(id=i["id"])
+                i["status"] = s.set_status
 
             for serial in indications_serialized:  # проверка на вхождении точки в список
                 if serial["id"] == i["point_id"]:
@@ -102,9 +107,9 @@ class Marks(View):
 
             for val in values_list:  # записываем статус в зависимости от среднего арифметического
                 for i in STATUS:
-                    if val["name"] == i and val["value"] > STATUS[i][0] and val["value"] < STATUS[i][1]:
+                    if val["name"] == i and STATUS[i][0] <= val["value"] <= STATUS[i][1]:
                         val["status"] = "warning"
-                    elif val["name"] == i and val["value"] >= STATUS[i][1]:
+                    elif val["name"] == i and val["value"] > STATUS[i][1]:
                         val["status"] = "critical"
                 if val["status"] == "critical":
                     serial["status"] = "critical"
@@ -122,7 +127,6 @@ class SensorReadings(View):
         body = json.loads(request.body.decode('utf-8'))
         start = body['filter']['dateTime']['start']
         end = body['filter']['dateTime']['end']
-        # point_id = list(Indication.objects.filter(id=id).values("point_id"))[0]["point_id"]
         indications = Indication.objects.filter(start__gt=start, end__lt=end,
                                                 point_id=id).values()  # получение данных по заданным параметрам
 
@@ -133,6 +137,9 @@ class SensorReadings(View):
             count = 1  # счетчик количества вхождений
             name = list(Sensor.objects.filter(id=i["sensor_id"]).values("name"))[0]["name"]
             unit = list(Sensor.objects.filter(id=i["sensor_id"]).values("unit"))[0]["unit"]
+            if not i["status"]:  # определение и добавление в БД правильного статуса
+                s = Indication.objects.get(id=i["id"])
+                i["status"] = s.set_status
 
             for serial in indications_serialized:  # если датчик уже есть в списке - прибавляем значение показателя и увеличиваем счетчик в словаре
                 if serial["name"] == name:
@@ -152,15 +159,16 @@ class SensorReadings(View):
 
         for serial in indications_serialized:  # записываем значения уровней в зависимости от среднего арифметического
             for val in STATUS:
-                if serial["name"] == val and serial["value"] > STATUS[val][0] and serial["value"] < STATUS[val][1]:
+                if serial["name"] == val and STATUS[val][0] <= serial["value"] <= STATUS[val][1]:
                     serial["status"] = "warning"
-                elif serial["name"] == val and serial["value"] >= STATUS[val][1]:
+                elif serial["name"] == val and serial["value"] > STATUS[val][1]:
                     serial["status"] = "critical"
 
         data = {
             "sensorReadings": indications_serialized
         }
         return JsonResponse(data)
+
 
 # class SensorReadings(View):
 #     def get(self, request, id):
@@ -180,3 +188,40 @@ class SensorReadings(View):
 #             "sensorReadings": indications_serialized
 #         }
 #         return JsonResponse(data)
+
+class HistorySensorReadings(View):
+    def get(self, request, id):
+        body = json.loads(request.body.decode('utf-8'))
+        start = body['filter']['dateTime']['start']
+        end = body['filter']['dateTime']['end']
+        indications = Indication.objects.filter(start__gt=start, end__lt=end,
+                                                point_id=id).order_by('-start').values()  # получение данных по заданным параметрам
+
+        indications_serialized = []  # сериализованный список словарей с нужными данными
+        data_list = []  # список словарей без объединения замеров по времени
+
+        for i in indications:
+            name = list(Sensor.objects.filter(id=i["sensor_id"]).values("name"))[0]["name"]
+            unit = list(Sensor.objects.filter(id=i["sensor_id"]).values("unit"))[0]["unit"]
+            if not i["status"]:
+                s = Indication.objects.get(id=i["id"])
+                i["status"] = s.set_status
+
+            data_list.append({"dateTime": {"start": i["start"], "end": i["end"]}, "sensorReadings": [
+                {"name": name, "value": i["value"], "unit": unit, "status": i["status"]}]})
+
+        for i in data_list:
+            for j in data_list:
+                if i["dateTime"] == j["dateTime"] and i != j:
+                    i["sensorReadings"].append(j["sensorReadings"][0])
+                    j["dateTime"] = "on_delete"
+
+
+        for i in data_list:
+            if i["dateTime"] != "on_delete":
+                indications_serialized.append(i)
+
+        data = {
+            "groups": indications_serialized
+        }
+        return JsonResponse(data)
