@@ -29,7 +29,7 @@ SECRET_KEY = 'django-insecure-b9&%d3#)n%xbf!8w741+g1mm1p4qe!g80chk)tg4&^+572j_f%
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['192.168.64.135']
+ALLOWED_HOSTS = ['192.168.64.135', '192.168.64.122', '192.168.64.222']
 
 
 # Application definition
@@ -81,7 +81,7 @@ WSGI_APPLICATION = 'mqtt_project.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'mqtt',
+        'NAME': 'test',
         'USER': 'root',
         'PASSWORD': 'Maksoft2023',
         'HOST': 'localhost',

@@ -79,42 +79,42 @@ class Marks(View):
                                                                "longitude": float(longitude)},
                                                "status": "normal"})
 
-        for serial in indications_serialized:  # запись правильного статуса
-            values = Indication.objects.filter(start__gt=start, end__lt=end,
-                                               point_id=serial["id"]).values()
-            count_dict = {}  # словарь с количеством вхождений одинаковых датчиков в точке. Для подсчета среднего арифметического
-            values_list = []  # список словарей с данными по датчикам
-
-            for i in values:
-                count = 1
-                name = list(Sensor.objects.filter(id=i["sensor_id"]).values("name"))[0]["name"]
-
-                for val in values_list:  # если датчик уже есть в списке - прибавляем значение показателя и увеличиваем счетчик в словаре
-                    if val["name"] == name:
-                        count += 1
-                        val.update({"value": val["value"] + i["value"]})
-                        count_dict.update({name: count_dict[name] + 1})
-
-                if count == 1:  # если датчика не оказалось в списке - добавляем данные
-                    values_list.append(
-                        {"name": name, "value": i["value"], "status": "normal"})
-                    count_dict.update({name: 1})
-
-            for val in values_list:  # делим сумму показателей датчика на количество вхождений
-                for count in count_dict:
-                    if val["name"] == count:
-                        val["value"] /= count_dict[count]
-
-            for val in values_list:  # записываем статус в зависимости от среднего арифметического
-                for i in STATUS:
-                    if val["name"] == i and STATUS[i][0] <= val["value"] <= STATUS[i][1]:
-                        val["status"] = "warning"
-                    elif val["name"] == i and val["value"] > STATUS[i][1]:
-                        val["status"] = "critical"
-                if val["status"] == "critical":
-                    serial["status"] = "critical"
-                elif val["status"] == "warning" and serial["status"] != "critical":
-                    serial["status"] = "warning"
+        # for serial in indications_serialized:  # запись правильного статуса
+        #     values = Indication.objects.filter(start__gt=start, end__lt=end,
+        #                                        point_id=serial["id"]).values()
+        #     count_dict = {}  # словарь с количеством вхождений одинаковых датчиков в точке. Для подсчета среднего арифметического
+        #     values_list = []  # список словарей с данными по датчикам
+        #
+        #     for i in values:
+        #         count = 1
+        #         name = list(Sensor.objects.filter(id=i["sensor_id"]).values("name"))[0]["name"]
+        #
+        #         for val in values_list:  # если датчик уже есть в списке - прибавляем значение показателя и увеличиваем счетчик в словаре
+        #             if val["name"] == name:
+        #                 count += 1
+        #                 val.update({"value": val["value"] + i["value"]})
+        #                 count_dict.update({name: count_dict[name] + 1})
+        #
+        #         if count == 1:  # если датчика не оказалось в списке - добавляем данные
+        #             values_list.append(
+        #                 {"name": name, "value": i["value"], "status": "normal"})
+        #             count_dict.update({name: 1})
+        #
+        #     for val in values_list:  # делим сумму показателей датчика на количество вхождений
+        #         for count in count_dict:
+        #             if val["name"] == count:
+        #                 val["value"] /= count_dict[count]
+        #
+        #     for val in values_list:  # записываем статус в зависимости от среднего арифметического
+        #         for i in STATUS:
+        #             if val["name"] == i and STATUS[i][0] <= val["value"] <= STATUS[i][1]:
+        #                 val["status"] = "warning"
+        #             elif val["name"] == i and val["value"] > STATUS[i][1]:
+        #                 val["status"] = "critical"
+        #         if val["status"] == "critical":
+        #             serial["status"] = "critical"
+        #         elif val["status"] == "warning" and serial["status"] != "critical":
+        #             serial["status"] = "warning"
 
         data = {
             "marks": indications_serialized
@@ -157,12 +157,12 @@ class SensorReadings(View):
                 if serial["name"] == count:
                     serial["value"] /= count_dict[count]
 
-        for serial in indications_serialized:  # записываем значения уровней в зависимости от среднего арифметического
-            for val in STATUS:
-                if serial["name"] == val and STATUS[val][0] <= serial["value"] <= STATUS[val][1]:
-                    serial["status"] = "warning"
-                elif serial["name"] == val and serial["value"] > STATUS[val][1]:
-                    serial["status"] = "critical"
+        # for serial in indications_serialized:  # записываем значения уровней в зависимости от среднего арифметического
+        #     for val in STATUS:
+        #         if serial["name"] == val and STATUS[val][0] <= serial["value"] <= STATUS[val][1]:
+        #             serial["status"] = "warning"
+        #         elif serial["name"] == val and serial["value"] > STATUS[val][1]:
+        #             serial["status"] = "critical"
 
         data = {
             "sensorReadings": indications_serialized

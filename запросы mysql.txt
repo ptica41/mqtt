@@ -1,5 +1,3 @@
-DROP TABLE IF EXISTS sensor;
-
 DROP TABLE IF EXISTS point;
 
 CREATE TABLE point (
@@ -37,3 +35,14 @@ CREATE TABLE indication (
         REFERENCES sensor (id)
         ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+INSERT INTO sensor (name, unit) VALUES ('Температура', '*С');
+INSERT INTO sensor (name, unit) VALUES ('Влажность', '%');
+INSERT INTO sensor (name, unit) VALUES ('Давление', 'мм/рт.ст');
+INSERT INTO sensor (name, unit) VALUES ('Уровень CO2', 'ppm');
+INSERT INTO sensor (name, unit) VALUES ('Уровень NO2', 'ppm');
+INSERT INTO sensor (name, unit) VALUES ('Уровень SO2', 'ppm');
+INSERT INTO sensor (name, unit) VALUES ('Уровень CO', 'ppm');
+INSERT INTO sensor (name, unit) VALUES ('Концентрация крупных частиц пыли (PM 10)', 'мг/м3');
+INSERT INTO sensor (name, unit) VALUES ('Концентрация мелкодисперсных частиц пыли (PM 2,5)', 'мг/м3');
+INSERT INTO sensor (name, unit) VALUES ('Концентрация ультрадисперсных частиц пыли (PM 1,0)', 'мг/м3');
