@@ -149,7 +149,7 @@ def to_base(data: list):  # запись в БД
                 cur.execute("SELECT id FROM sensor WHERE name = '{name}'".format(name=i))
                 sensor_id = cur.fetchone()
                 cur.execute(
-                    "INSERT INTO indication (start, end, point_id, sensor_id, value) VALUES ('{start}', '{end}', {point_id}, {sensor_id}, {value}, 'normal')".format(
+                    "INSERT INTO indication (start, end, point_id, sensor_id, value, status) VALUES ('{start}', '{end}', {point_id}, {sensor_id}, {value}, 'normal')".format(
                         start=start, end=end, point_id=point_id[0], sensor_id=sensor_id[0], value=round(count[i][0], 2)))
                 con.commit()
         data.clear()
@@ -161,11 +161,11 @@ if __name__ == '__main__':
             client = connect_mqtt()
             subscribe(client)
             client.loop_start()
-            while (datetime.datetime.now() - t).total_seconds() < 3 * 60:
+            while (datetime.datetime.now() - t).total_seconds() < 2 * 60:
                 time.sleep(1)
             client.loop_stop()
             print(datetime.datetime.now(), ' – Таймаут получения данных')
-            to_base(data_list)
+            to_base(data_list)  # закомментировал 18,01,24
             time.sleep(3 * 60)
         except TimeoutError:
             print(datetime.datetime.now(), ' – Таймаут подключения, повторная попытка через 5 минут')

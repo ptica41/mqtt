@@ -5,15 +5,6 @@ from .models import Sensor, Indication, Point
 from .config import STATUS
 import json
 
-# STATUS = {"Уровень CO2": [6, 10],
-#           "Уровень NO2": [6, 10],
-#           "Уровень SO2": [4, 10],
-#           "Уровень CO": [4, 8],
-#           "Концентрация крупных частиц пыли (PM 10)": [2, 3],
-#           "Концентрация мелкодисперсных частиц пыли(PM 2, 5)": [2, 3],
-#           "Концентрация ультрадисперсных частиц пыли (PM 1,0)": [2, 3]
-#           }  # диапазоны состояний статуса
-
 
 # class Marks(View):
 #     def get(self, request):
@@ -55,6 +46,7 @@ import json
 class Marks(View):
     def get(self, request):
         body = json.loads(request.body.decode('utf-8'))
+        print(body)
         start = body['filter']['dateTime']['start']
         end = body['filter']['dateTime']['end']
         indications = Indication.objects.filter(start__gt=start,
@@ -79,46 +71,47 @@ class Marks(View):
                                                                "longitude": float(longitude)},
                                                "status": "normal"})
 
-        # for serial in indications_serialized:  # запись правильного статуса
-        #     values = Indication.objects.filter(start__gt=start, end__lt=end,
-        #                                        point_id=serial["id"]).values()
-        #     count_dict = {}  # словарь с количеством вхождений одинаковых датчиков в точке. Для подсчета среднего арифметического
-        #     values_list = []  # список словарей с данными по датчикам
-        #
-        #     for i in values:
-        #         count = 1
-        #         name = list(Sensor.objects.filter(id=i["sensor_id"]).values("name"))[0]["name"]
-        #
-        #         for val in values_list:  # если датчик уже есть в списке - прибавляем значение показателя и увеличиваем счетчик в словаре
-        #             if val["name"] == name:
-        #                 count += 1
-        #                 val.update({"value": val["value"] + i["value"]})
-        #                 count_dict.update({name: count_dict[name] + 1})
-        #
-        #         if count == 1:  # если датчика не оказалось в списке - добавляем данные
-        #             values_list.append(
-        #                 {"name": name, "value": i["value"], "status": "normal"})
-        #             count_dict.update({name: 1})
-        #
-        #     for val in values_list:  # делим сумму показателей датчика на количество вхождений
-        #         for count in count_dict:
-        #             if val["name"] == count:
-        #                 val["value"] /= count_dict[count]
-        #
-        #     for val in values_list:  # записываем статус в зависимости от среднего арифметического
-        #         for i in STATUS:
-        #             if val["name"] == i and STATUS[i][0] <= val["value"] <= STATUS[i][1]:
-        #                 val["status"] = "warning"
-        #             elif val["name"] == i and val["value"] > STATUS[i][1]:
-        #                 val["status"] = "critical"
-        #         if val["status"] == "critical":
-        #             serial["status"] = "critical"
-        #         elif val["status"] == "warning" and serial["status"] != "critical":
-        #             serial["status"] = "warning"
+        for serial in indications_serialized:  # запись правильного статуса
+            values = Indication.objects.filter(start__gt=start, end__lt=end,
+                                               point_id=serial["id"]).values()
+            count_dict = {}  # словарь с количеством вхождений одинаковых датчиков в точке. Для подсчета среднего арифметического
+            values_list = []  # список словарей с данными по датчикам
+
+            for i in values:
+                count = 1
+                name = list(Sensor.objects.filter(id=i["sensor_id"]).values("name"))[0]["name"]
+
+                for val in values_list:  # если датчик уже есть в списке - прибавляем значение показателя и увеличиваем счетчик в словаре
+                    if val["name"] == name:
+                        count += 1
+                        val.update({"value": val["value"] + i["value"]})
+                        count_dict.update({name: count_dict[name] + 1})
+
+                if count == 1:  # если датчика не оказалось в списке - добавляем данные
+                    values_list.append(
+                        {"name": name, "value": i["value"], "status": "normal"})
+                    count_dict.update({name: 1})
+
+            for val in values_list:  # делим сумму показателей датчика на количество вхождений
+                for count in count_dict:
+                    if val["name"] == count:
+                        val["value"] /= count_dict[count]
+
+            for val in values_list:  # записываем статус в зависимости от среднего арифметического
+                for i in STATUS:
+                    if val["name"] == i and STATUS[i][0] <= val["value"] <= STATUS[i][1]:
+                        val["status"] = "warning"
+                    elif val["name"] == i and val["value"] > STATUS[i][1]:
+                        val["status"] = "critical"
+                if val["status"] == "critical":
+                    serial["status"] = "critical"
+                elif val["status"] == "warning" and serial["status"] != "critical":
+                    serial["status"] = "warning"
 
         data = {
             "marks": indications_serialized
         }
+        print(data)
         return JsonResponse(data)
 
 

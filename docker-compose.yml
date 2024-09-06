@@ -1,0 +1,26 @@
+version: '3.8'
+
+services:
+  web:
+    build: ./mqtt_project
+    command: sh -c "python manage.py migrate --run-syncdb && python manage.py runserver 0.0.0.0:8000"
+    volumes:
+      - .:/django
+    ports:
+      - 8000:8000
+    depends_on:
+      - db
+
+  db:
+    build: .
+    ports:
+      - 3306:3307
+    environment:
+      MYSQL_DATABASE: 'test'
+      MYSQL_USER: 'root'
+      MYSQL_PASSWORD: 'Maksoft2023'
+      MYSQL_ROOT_PASSWORD: 'Maksoft2023'
+    restart: always
+    volumes:
+      - ./test:/var/lib/mysql
+
